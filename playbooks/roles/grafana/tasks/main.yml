@@ -6,16 +6,32 @@
       - ca-certificates
       - apt-transport-https
       - wget
+      - python3-debian
 
 - name: Installation of the Grafana stable repository GPG key
   ansible.builtin.get_url:
     url: https://apt.grafana.com/gpg-full.key
     dest: "/etc/apt/keyrings/grafana.asc"
 
+# - name: Installation of the Grafana stable repository
+#   ansible.builtin.apt_repository:
+#     repo: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main"
+#     state: present
+
 - name: Installation of the Grafana stable repository
-  ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main"
-    state: present
+  ansible.builtin.deb822_repository:
+    name: grafana
+    types: deb
+    uris: https://apt.grafana.com
+    suites: stable
+    components:
+      - main
+    signed_by: /etc/apt/keyrings/grafana.asc
+
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
 
 
 - name: Installation of grafana

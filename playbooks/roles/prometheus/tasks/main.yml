@@ -1,5 +1,5 @@
 ---
-- name: Installation of the monitoring stack
+- name: Installation of Prometheus
   ansible.builtin.apt:
     pkg:
     - prometheus
