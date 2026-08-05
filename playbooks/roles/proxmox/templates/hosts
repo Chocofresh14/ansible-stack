@@ -1,0 +1,2 @@
+127.0.0.1       localhost
+{{ ansible_facts["default_ipv4"]["address"] }}  node1.proxmox.local    {{ ansible_facts['hostname'] }}

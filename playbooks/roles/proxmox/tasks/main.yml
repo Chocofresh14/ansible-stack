@@ -1,0 +1,61 @@
+---
+- name: Installation of required packages
+  ansible.builtin.apt:
+    pkg:
+      - python3-debian
+      - gnupg2
+
+- name: Installation of the /etc/hosts config
+  ansible.builtin.template:
+    src: hosts
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Installation of the Proxmox VE repository GPG key
+  ansible.builtin.get_url:
+    url: https://enterprise.proxmox.com/debian/proxmox-archive-keyring-trixie.gpg
+    dest: "/usr/share/keyrings/proxmox-archive-keyring.gpg"
+
+- name: Installation of the Proxmox VE stable repository
+  ansible.builtin.deb822_repository:
+    name: proxmox
+    types: deb
+    uris: http://download.proxmox.com/debian/pve
+    suites: trixie
+    components:
+      - pve-no-subscription
+    signed_by: /usr/share/keyrings/proxmox-archive-keyring.gpg
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Installation of proxmox-ve kernel
+  ansible.builtin.apt:
+    pkg:
+      - proxmox-default-kernel
+  register: proxmox_kernel_install
+
+- name: Reboot after Proxmox kernel installation
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+  when: proxmox_kernel_install.changed
+
+- name: Installation of proxmox-ve packages
+  ansible.builtin.apt:
+    pkg:
+      - proxmox-ve 
+      - postfix 
+      - open-iscsi 
+      - chrony
+
+- name: Remove debian kernel
+  ansible.builtin.apt:
+    pkg:
+      - linux-image-amd64
+      - 'linux-image-6.12*'
+      - os-prober
+    state: absent
+  become: true
