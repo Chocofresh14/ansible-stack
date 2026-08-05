@@ -1,0 +1,41 @@
+---
+- name: Installation of required packages
+  ansible.builtin.apt:
+    pkg:
+      - curl
+      - python3-debian
+
+- name: Installation of the Gitlab CE stable repository GPG key
+  ansible.builtin.get_url:
+    url: https://packages.gitlab.com/gpgkey/gpg.key
+    dest: "/etc/apt/keyrings/gitlab_gitlab-ce-archive-keyring.gpg"
+
+
+- name: Installation of the GitLab stable repository
+  ansible.builtin.deb822_repository:
+    name: gitlab
+    types: deb
+    uris: https://packages.gitlab.com/gitlab/gitlab-ce/debian
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components:
+      - main
+    signed_by: /etc/apt/keyrings/gitlab_gitlab-ce-archive-keyring.gpg
+
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Installation of gitlab ce packages
+  ansible.builtin.apt:
+    pkg:
+      - gitlab-ce
+
+- name: Installation of the gitlab.rc config
+  ansible.builtin.template:
+    src: gitlab.rb
+    dest: /etc/gitlab/
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Reconfiguration of gitlab

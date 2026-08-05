@@ -1,0 +1,3 @@
+---
+- name: Reconfiguration of gitlab
+  ansible.builtin.command: gitlab-ctl reconfigure
