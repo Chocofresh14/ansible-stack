@@ -1,4 +1,4 @@
-zone "oteria.lan" {
+zone "example.lan" {
 	type primary;
 	file "/etc/bind/db.oteria.lan";
 };
