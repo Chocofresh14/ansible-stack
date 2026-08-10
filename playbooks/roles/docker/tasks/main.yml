@@ -1,35 +1,8 @@
 ---
-- name: Installation of required packages
-  ansible.builtin.apt:
-    pkg:
-    - ca-certificates
-    - curl
-    - python3-debian
+- name: Install Docker on Debian family
+  ansible.builtin.include_tasks: debian.yml
+  when: ansible_os_family == "Debian"
 
-- name: Installation of the Docker stable repository GPG key
-  ansible.builtin.get_url:
-    url: https://download.docker.com/linux/debian/gpg
-    dest: "/etc/apt/keyrings/docker.asc"
-
-- name: Installation of the Docker stable repository
-  ansible.builtin.deb822_repository:
-    name: docker
-    types: deb
-    uris: https://download.docker.com/linux/debian
-    suites: "{{ ansible_facts['distribution_release'] }}"
-    components:
-      - stable
-    signed_by: /etc/apt/keyrings/docker.asc
-
-- name: Update apt cache
-  ansible.builtin.apt:
-    update_cache: true
-
-- name: Installation of docker latest version
-  ansible.builtin.apt:
-    pkg:
-    - docker-ce
-    - docker-ce-cli
-    - containerd.io
-    - docker-buildx-plugin 
-    - docker-compose-plugin
+- name: Install Docker on RedHat family
+  ansible.builtin.include_tasks: redhat.yml
+  when: ansible_os_family == "RedHat"

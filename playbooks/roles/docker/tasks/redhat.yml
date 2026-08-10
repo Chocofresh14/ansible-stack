@@ -1,0 +1,16 @@
+---
+- name: Install the docker engine rpm from a remote repo
+  ansible.builtin.dnf:
+    name: 'https://download.docker.com/linux/fedora/docker-ce.repo'
+    state: present
+
+
+- name: Install the latest version of Apache and MariaDB
+  ansible.builtin.dnf:
+    name:
+      - docker-ce 
+      - docker-ce-cli 
+      - containerd.io 
+      - docker-buildx-plugin 
+      - docker-compose-plugin
+    state: latest
