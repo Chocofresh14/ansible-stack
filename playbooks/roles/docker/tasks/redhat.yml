@@ -1,16 +1,35 @@
 ---
-- name: Install the docker engine rpm from a remote repo
-  ansible.builtin.dnf:
-    name: 'https://download.docker.com/linux/fedora/docker-ce.repo'
-    state: present
-
-
-- name: Install the latest version of Apache and MariaDB
+- name: Installation required dependencies
   ansible.builtin.dnf:
     name:
-      - docker-ce 
-      - docker-ce-cli 
-      - containerd.io 
-      - docker-buildx-plugin 
+      - ca-certificates
+      - dnf-plugins-core
+    state: present
+
+- name: Add Docker repository
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/rhel/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Refresh DNF cache
+  ansible.builtin.dnf:
+    update_cache: true
+
+- name: Install Docker
+  ansible.builtin.dnf:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
       - docker-compose-plugin
-    state: latest
+    state: present
+
+- name: Start and enable Docker
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
