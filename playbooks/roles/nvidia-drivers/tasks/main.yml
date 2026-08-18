@@ -1,0 +1,61 @@
+---
+- name: Installation des dépendances requises
+  ansible.builtin.apt:
+    name: 
+      - build-essential 
+      - dkms 
+      - openssl 
+      - mokutil
+    state: present
+    update_cache: true
+
+- name: Install NVIDIA driver 535
+  ansible.builtin.apt:
+    name: nvidia-driver-535
+    state: present
+    install_recommends: true
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Create the key directory
+  ansible.builtin.file:
+    path: "{{ mok_dir }}"
+    state: directory
+    mode: '0700'
+
+- name: Generate MOK key pair
+  ansible.builtin.shell: >
+    openssl req -x509 -new -subj "/CN=AnsibleNvidiaMOK/" 
+    -newkey rsa:2048 -nodes -outform DER 
+    -keyout {{ mok_dir }}/MOK.priv -out {{ mok_dir }}/MOK.der
+  args:
+    creates: "{{ mok_dir }}/MOK.der"
+
+- name: Enroll MOK key (prepare for reboot)
+  ansible.builtin.shell: >
+    echo -e "{{ mok_password }}\n{{ mok_password }}" | mokutil --import {{ mok_dir }}/MOK.der
+  args:
+    creates: "/var/lib/shim-signed/mok/.enrolled"
+
+- name: Create enrollment marker
+  ansible.builtin.file:
+    path: "/var/lib/shim-signed/mok/.enrolled"
+    state: touch
+
+- name: Sign all NVIDIA kernel modules
+  ansible.builtin.shell: |
+    for module in $(ls /lib/modules/$(uname -r)/updates/dkms/nvidia*.ko); do
+      echo "Signing $module..."
+      /usr/src/linux-headers-$(uname -r)/scripts/sign-file sha256 {{ mok_dir }}/MOK.priv {{ mok_dir }}/MOK.der $module
+    done
+  args:
+    creates: "{{ mok_dir }}/signed_marker"
+
+- name: Create signing marker
+  ansible.builtin.file:
+    path: "{{ mok_dir }}/signed_marker"
+    state: touch
+
+- name: Reboot the machine
+  ansible.builtin.reboot:
+    msg: "Reboot to enrolled NVIDIA drivers"

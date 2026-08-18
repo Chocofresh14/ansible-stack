@@ -1,0 +1,7 @@
+---
+- hosts: nvidia
+  vars:
+    mok_password: "Password1234!"
+    mok_dir: "/var/lib/shim-signed/mok"
+  roles:
+    - nvidia-drivers
