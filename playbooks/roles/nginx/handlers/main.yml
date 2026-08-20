@@ -1,0 +1,5 @@
+---
+- name: Restart reverse proxy
+  ansible.builtin.service:
+    name: nginx
+    state: restarted

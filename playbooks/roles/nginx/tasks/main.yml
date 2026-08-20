@@ -1,0 +1,21 @@
+---
+- name: Installation of required packages
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: Installation of the reverse proxy config
+  ansible.builtin.template:
+    src: example.lan
+    dest: /etc/nginx/sites-available/example.lan
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart reverse proxy
+
+- name: Enable reverse proxy site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/example.lan
+    dest: /etc/nginx/sites-enabled/example.lan
+    state: link
+  notify: Restart reverse proxy
