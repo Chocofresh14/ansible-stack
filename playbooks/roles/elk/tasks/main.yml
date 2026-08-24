@@ -1,0 +1,57 @@
+---
+- name: Installation of required packages
+  ansible.builtin.apt:
+    pkg:
+      - apt-transport-https
+      - python3-debian
+
+
+- name: Installation of the Elasticsearch PGP key
+  ansible.builtin.get_url:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    dest: "/usr/share/keyrings/elasticsearch-keyring.gpg"
+
+
+
+- name: Installation of ELK repo
+  ansible.builtin.deb822_repository:
+    name: elk
+    types: deb
+    uris: https://artifacts.elastic.co/packages/9.x/apt
+    suites: stable
+    components:
+      - main
+    signed_by: /usr/share/keyrings/elasticsearch-keyring.gpg
+
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+
+- name: Installation of ELK Debian package
+  ansible.builtin.apt:
+    pkg:
+      - elasticsearch
+      - kibana
+
+
+- name: Installation of the elastic config
+  ansible.builtin.template:
+    src: elasticsearch.yml
+    dest: /etc/elasticsearch/
+    owner: root
+    group: elasticsearch
+    mode: "0660"
+  notify: Restart Elasticsearch
+
+
+
+- name: Installation of the kibana config
+  ansible.builtin.template:
+    src: kibana.yml
+    dest: /etc/kibana/
+    owner: root
+    group: kibana
+    mode: "0660"
+  notify: Restart Kibana
