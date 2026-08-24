@@ -3,7 +3,6 @@
   ansible.builtin.apt:
     pkg:
     - ca-certificates
-    - curl
     - python3-debian
 
 - name: Installation of the Docker stable repository GPG key

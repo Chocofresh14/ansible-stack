@@ -13,10 +13,6 @@
     url: https://apt.grafana.com/gpg-full.key
     dest: "/etc/apt/keyrings/grafana.asc"
 
-# - name: Installation of the Grafana stable repository
-#   ansible.builtin.apt_repository:
-#     repo: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main"
-#     state: present
 
 - name: Installation of the Grafana stable repository
   ansible.builtin.deb822_repository:
