@@ -1,0 +1,55 @@
+---
+- name: Download Zabbix repository package
+  ansible.builtin.get_url:
+    url: https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_latest_7.0+debian13_all.deb
+    dest: /tmp/zabbix-release.deb
+    mode: '0644'
+
+- name: Install Zabbix repository package
+  ansible.builtin.apt:
+    deb: /tmp/zabbix-release.deb
+    state: present
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+
+- name: Installation of Zabbix server, frontend, agent2
+  ansible.builtin.apt:
+    pkg:
+      - zabbix-server-mysql
+      - zabbix-frontend-php 
+      - zabbix-apache-conf 
+      - zabbix-sql-scripts 
+      - zabbix-agent2 
+
+
+- name: Import Zabbix database schema
+  ansible.builtin.shell: |
+    zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | \
+      mysql --default-character-set=utf8mb4 -uzabbix -p'debian' zabbix
+  args:
+    executable: /bin/bash
+  no_log: true
+
+
+- name: Installation of the reverse proxy config
+  ansible.builtin.template:
+    src: zabbix_server.conf
+    dest: /etc/zabbix/zabbix_server.conf
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart Zabbix services
+
+
+
+- name: Enable Zabbix services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    enabled: true
+  loop:
+    - zabbix-server
+    - zabbix-agent2
+    - apache2
