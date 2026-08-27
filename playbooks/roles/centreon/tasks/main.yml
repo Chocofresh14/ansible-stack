@@ -1,0 +1,147 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - lsb-release
+      - ca-certificates
+      - apt-transport-https
+      - software-properties-common
+      - gnupg2
+      - python3-debian
+      - python3-pymysql
+      - wget
+      - curl
+    state: present
+
+
+- name: Install PHP repository GPG key
+  ansible.builtin.get_url:
+    url: https://packages.sury.org/php/apt.gpg
+    dest: /etc/apt/trusted.gpg.d/php.gpg
+    mode: '0644'
+
+- name: Add Sury PHP repository
+  ansible.builtin.deb822_repository:
+    name: sury-php
+    types:
+      - deb
+    uris:
+      - https://packages.sury.org/php/
+    suites:
+      - "{{ ansible_facts['distribution_release'] }}"
+    components:
+      - main
+    signed_by: /etc/apt/trusted.gpg.d/php.gpg
+
+
+- name: Download MariaDB repository setup script
+  ansible.builtin.get_url:
+    url: https://r.mariadb.com/downloads/mariadb_repo_setup
+    dest: /tmp/mariadb_repo_setup
+    mode: '0755'
+
+- name: Configure MariaDB repository
+  ansible.builtin.command:
+    cmd: >
+      /tmp/mariadb_repo_setup
+      --os-type=debian
+      --os-version={{ ansible_facts['distribution_major_version'] }}
+      --mariadb-server-version={{ mariadb_version }}
+  args:
+    creates: /etc/apt/sources.list.d/mariadb.list
+
+- name: Install Centreon repository GPG key
+  ansible.builtin.get_url:
+    url: https://apt-key.centreon.com
+    dest: /etc/apt/trusted.gpg.d/centreon.gpg
+    mode: '0644'
+
+- name: Add Centreon standard repository
+  ansible.builtin.deb822_repository:
+    name: centreon-25.10-stable
+    types:
+      - deb
+    uris:
+      - https://packages.centreon.com/apt-standard/
+    suites:
+      - "{{ ansible_facts['distribution_release'] }}-25.10-stable"
+    components:
+      - main
+    signed_by: /etc/apt/trusted.gpg.d/centreon.gpg
+
+- name: Add Centreon plugins repository
+  ansible.builtin.deb822_repository:
+    name: centreon-plugins
+    types:
+      - deb
+    uris:
+      - https://packages.centreon.com/apt-plugins-stable/
+    suites:
+      - "{{ ansible_facts['distribution_release'] }}"
+    components:
+      - main
+    signed_by: /etc/apt/trusted.gpg.d/centreon.gpg
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+
+- name: Install Centreon
+  ansible.builtin.apt:
+    name:
+      - centreon-mariadb
+      - centreon
+    state: present
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable and restart MariaDB
+  ansible.builtin.service:
+    name: mariadb
+    enabled: true
+    state: restarted
+
+
+- name: Set MariaDB root password
+  community.mysql.mysql_user:
+    name: root
+    host: localhost
+    password: "{{ mariadb_root_password }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+    state: present
+
+- name: Remove anonymous MariaDB users
+  community.mysql.mysql_user:
+    name: ""
+    host_all: true
+    state: absent
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Remove MariaDB test database
+  community.mysql.mysql_db:
+    name: test
+    state: absent
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Enable and start Centreon services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - php8.2-fpm
+    - apache2
+    - centreon
+    - cbd
+    - centengine
+    - gorgoned
+    - centreontrapd
+    - snmpd
+    - snmptrapd

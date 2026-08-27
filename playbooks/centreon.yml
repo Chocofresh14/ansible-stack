@@ -1,0 +1,4 @@
+---
+- hosts: centreon
+  roles:
+    - centreon
