@@ -1,0 +1,30 @@
+---
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - python3-pymysql
+      - mariadb-server
+    state: present
+    update_cache: true
+
+
+- name: Set MariaDB root password
+  community.mysql.mysql_user:
+    name: root
+    host: localhost
+    password: "{{ mariadb_root_password }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+    state: present
+
+- name: Remove anonymous MariaDB users
+  community.mysql.mysql_user:
+    name: ""
+    host_all: true
+    state: absent
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Remove MariaDB test database
+  community.mysql.mysql_db:
+    name: test
+    state: absent
+    login_unix_socket: /run/mysqld/mysqld.sock

@@ -1,8 +1,4 @@
 ---
-- name: Update apt cache
-  ansible.builtin.apt:
-    update_cache: true
-
 - name: Install required packages
   ansible.builtin.apt:
     name:
@@ -16,6 +12,7 @@
       - wget
       - curl
     state: present
+    update_cache: true
 
 
 - name: Install PHP repository GPG key
@@ -38,21 +35,6 @@
     signed_by: /etc/apt/trusted.gpg.d/php.gpg
 
 
-- name: Download MariaDB repository setup script
-  ansible.builtin.get_url:
-    url: https://r.mariadb.com/downloads/mariadb_repo_setup
-    dest: /tmp/mariadb_repo_setup
-    mode: '0755'
-
-- name: Configure MariaDB repository
-  ansible.builtin.command:
-    cmd: >
-      /tmp/mariadb_repo_setup
-      --os-type=debian
-      --os-version={{ ansible_facts['distribution_major_version'] }}
-      --mariadb-server-version={{ mariadb_version }}
-  args:
-    creates: /etc/apt/sources.list.d/mariadb.list
 
 - name: Install Centreon repository GPG key
   ansible.builtin.get_url:
@@ -108,27 +90,6 @@
     enabled: true
     state: restarted
 
-
-- name: Set MariaDB root password
-  community.mysql.mysql_user:
-    name: root
-    host: localhost
-    password: "{{ mariadb_root_password }}"
-    login_unix_socket: /run/mysqld/mysqld.sock
-    state: present
-
-- name: Remove anonymous MariaDB users
-  community.mysql.mysql_user:
-    name: ""
-    host_all: true
-    state: absent
-    login_unix_socket: /run/mysqld/mysqld.sock
-
-- name: Remove MariaDB test database
-  community.mysql.mysql_db:
-    name: test
-    state: absent
-    login_unix_socket: /run/mysqld/mysqld.sock
 
 - name: Enable and start Centreon services
   ansible.builtin.service:
