@@ -16,15 +16,21 @@
     login_unix_socket: /run/mysqld/mysqld.sock
     state: present
 
+
 - name: Remove anonymous MariaDB users
   community.mysql.mysql_user:
     name: ""
     host_all: true
     state: absent
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
     login_unix_socket: /run/mysqld/mysqld.sock
+
 
 - name: Remove MariaDB test database
   community.mysql.mysql_db:
     name: test
     state: absent
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
     login_unix_socket: /run/mysqld/mysqld.sock
